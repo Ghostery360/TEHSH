@@ -1,1 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Lucky Oracle Pro - Elite Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #030406; --card: rgba(18, 20, 27, 0.95); --border: rgba(255, 255, 255, 0.08);
+    --primary: #3b82f6; --accent: #10b981; --text: #ffffff; --text-dim: #94a3b8; --danger: #ef4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
+  body, html { height: 100%; width: 100%; background: var(--bg); color: var(--text); overflow: hidden; background-image: radial-gradient(circle at 50% -20%, #1e293b 0%, #030406 80%); }
+
+  /* MODALE D'OUVERTURE OBLIGATOIRE */
+  #welcomeModal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9000;
+    display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(15px);
+  }
+  .modal-box {
+    background: var(--card); border: 1px solid var(--border); padding: 30px;
+    border-radius: 40px; max-width: 450px; width: 100%; text-align: center;
+    box-shadow: 0 0 50px rgba(59, 130, 246, 0.15); animation: slideUp 0.5s ease-out;
+  }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  
+  .modal-scroll { font-size: 13px; line-height: 1.6; color: var(--text-dim); text-align: left; margin: 20px 0; max-height: 320px; overflow-y: auto; padding-right: 10px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+  .modal-scroll b { color: #fff; }
+
+  /* POP-IN CONSEIL */
+  #advicePop {
+    position: fixed; top: -120px; left: 50%; transform: translateX(-50%);
+    width: 90%; max-width: 380px; background: #0f172a; border: 1px solid var(--accent);
+    padding: 18px; border-radius: 24px; z-index: 7000; transition: 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.9); display: flex; align-items: center; gap: 15px;
+  }
+  #advicePop.active { top: 25px; }
+
+  /* ÉCRANS PAYWALL & SETTINGS */
+  .paywall-view { position: fixed; inset: 0; background: var(--bg); z-index: 6000; padding: 30px; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .paywall-view.open { display: flex; }
+  .settings-view { position: fixed; inset: 0; background: var(--bg); z-index: 5000; padding: 25px; transform: translateX(100%); transition: 0.6s cubic-bezier(0.19, 1, 0.22, 1); overflow-y: auto; display: flex; flex-direction: column; }
+  .settings-view.open { transform: translateX(0); }
+
+  .input-code { width: 100%; max-width: 280px; height: 60px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; color: #fff; text-align: center; font-size: 18px; font-weight: 700; margin: 20px 0; outline: none; }
+
+  /* App Shell */
+  .app-shell { height: 100%; display: flex; flex-direction: column; max-width: 500px; margin: 0 auto; padding: 20px; }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; }
+  .icon-btn { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 48px; height: 48px; border-radius: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+
+  /* VIEWPORT */
+  .viewport { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+  #multiplier { font-size: 100px; font-weight: 900; letter-spacing: -6px; transition: 0.3s; text-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  
+  .orbit-container { display: none; width: 100px; height: 60px; justify-content: space-between; align-items: center; }
+  .scanning .orbit-container { display: flex; }
+  .scanning #multiplier { display: none; }
+  .dot { width: 14px; height: 14px; background: var(--primary); border-radius: 50%; animation: orbit 1.5s infinite ease-in-out; }
+  .dot:nth-child(2) { animation-delay: 0.2s; background: var(--accent); }
+  .dot:nth-child(3) { animation-delay: 0.4s; background: #6366f1; }
+  @keyframes orbit { 0%, 100% { transform: translateY(0); opacity: 0.5; } 50% { transform: translateY(-30px); opacity: 1; } }
+
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); padding: 20px; border-radius: 28px; text-align: center; backdrop-filter: blur(10px); }
+  
+  .scan-btn { width: 100%; height: 85px; border-radius: 35px; border: none; background: #fff; color: #000; font-weight: 900; font-size: 17px; cursor: pointer; box-shadow: 0 10px 30px rgba(255,255,255,0.1); transition: 0.3s; }
+  .scan-btn:active { transform: scale(0.95); }
+  .scan-btn:disabled { background: #111827; color: #334155; cursor: not-allowed; box-shadow: none; }
+</style>
+</head>
+<body>
+
+<div id="welcomeModal">
+  <div class="modal-box">
+    <div style="font-size: 45px; margin-bottom: 15px;">🛡️</div>
+    <h2 style="font-weight: 900; letter-spacing: -1px;">AVERTISSEMENT ELITE</h2>
+    <div class="modal-scroll">
+      Ce bot est conçu pour aider à faire des mises plus intelligentes et peut être un bon outil pour observer les tendances des cotes. Cependant, il est important de comprendre qu’il n’existe pas de bot <b>fiable à 100%</b>. Même si ce bot est bien programmé et souvent précis, le hasard reste toujours présent dans les jeux et les cotes.<br><br>
+      Il faut donc savoir analyser les situations avant de miser. Par exemple, si tu remarques qu’il y a eu <b>trop de grosses cotes</b> avant que tu ne paries, il est important de faire attention : le bot peut avoir un algorithme qui ajuste les résultats pour créer des pertes. Cela signifie que même si la tendance semble bonne, tu peux quand même perdre.<br><br>
+      <b>Une bonne pratique consiste à :</b><br>
+      • Observer les cotes avant de miser et ne pas se précipiter.<br>
+      • Gérer ton argent et ne jamais miser plus que ce que tu peux te permettre de perdre.<br>
+      • Savoir s’arrêter après un gain ou après une série de pertes, sans chercher à te “rattraper” immédiatement.<br><br>
+      En résumé, ce bot est un outil utile, mais il ne garantit jamais un gain à 100%. L’intelligence, la prudence et la gestion de ton budget restent tes meilleurs alliés pour miser efficacement.
+    </div>
+    <button class="scan-btn" style="height: 65px;" onclick="closeWelcome()">J'AI COMPRIS</button>
+  </div>
+</div>
+
+<div id="advicePop">
+  <div style="font-size: 24px;">🚀</div>
+  <div>
+    <div style="font-weight: 900; font-size: 13px; color: var(--accent);">SIGNAL HAUTE VALEUR</div>
+    <div id="popText" style="font-size: 11px; color: #fff; opacity: 0.9;"></div>
+  </div>
+</div>
+
+<div class="paywall-view" id="paywall">
+  <div style="font-size: 40px; margin-bottom: 20px;">🔒</div>
+  <h2 style="font-weight: 900; color: var(--danger); font-size: 28px;">QUOTA ÉPUISÉ</h2>
+  <p style="color: var(--text-dim); margin-top: 10px;">Entrez un code de recharge.</p>
+  <input type="text" id="accessCode" class="input-code" placeholder="CODE D'ACCÈS">
+  <button class="scan-btn" style="height: 60px; width: 220px;" onclick="checkAccessCode()">ACTIVER</button>
+  <div style="margin-top: 40px; font-size: 14px;">Support : <b style="color: var(--primary);">+226 56 96 78 18</b></div>
+</div>
+
+<div class="settings-view" id="settingsScreen">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+    <h2 style="font-weight: 900;">Configuration</h2>
+    <button class="icon-btn" onclick="toggleSettings(false)">✕</button>
+  </div>
+  <div style="background:var(--card); border:1px solid var(--border); padding:25px; border-radius:30px;">
+    <p style="color: var(--primary); font-weight: 800; margin-bottom: 10px;">🧠 Master Stratégie</p>
+    <p style="font-size: 13px; color: var(--text-dim); line-height: 1.5;">L'Oracle repère les flux de données entre l'heure actuelle et les <span style="color:var(--accent); font-weight:700;">12 prochaines minutes</span>.</p>
+  </div>
+  <a href="https://Lucky.app" style="display:block; text-align:center; background:white; color:black; padding:20px; border-radius:25px; font-weight:800; text-decoration:none; margin-top:20px;">Accéder à Lucky.app</a>
+</div>
+
+<div class="app-shell">
+  <header>
+    <button class="icon-btn" id="quotaDisplay" style="font-size: 11px; color: var(--accent); padding: 0 15px; width: auto;">QUOTA: --</button>
+    <div style="font-size: 10px; font-weight: 900; color: var(--primary); letter-spacing: 2px;">ORACLE_PRO_V1</div>
+    <button class="icon-btn" onclick="toggleSettings(true)">☰</button>
+  </header>
+
+  <main class="viewport" id="mainArea">
+    <div class="orbit-container"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div id="multiplier">1.00x</div>
+    <div id="statusText" style="font-size: 11px; font-weight: 800; color: var(--primary); margin-top: 30px; letter-spacing: 3px;">SYSTÈME PRÊT</div>
+  </main>
+
+  <div class="stats-row">
+    <div class="stat-card"><p style="font-size: 10px; color: var(--text-dim); margin-bottom: 5px;">PROCHAIN FLUX</p><p id="time" style="font-weight: 900; font-size: 20px;">--:--</p></div>
+    <div class="stat-card"><p style="font-size: 10px; color: var(--text-dim); margin-bottom: 5px;">CONFIANCE</p><p id="prob" style="font-weight: 900; font-size: 20px;">--%</p></div>
+  </div>
+
+  <button class="scan-btn" id="scanBtn" onclick="executeScan()">ANALYSER LE SIGNAL</button>
+</div>
+
+<script>
+  let quota = localStorage.getItem('oracle_quota') === null ? 3 : parseInt(localStorage.getItem('oracle_quota'));
+  let usedCodes = JSON.parse(localStorage.getItem('oracle_used_codes')) || [];
+  let cooldownEnd = localStorage.getItem('oracle_cooldown_end') || 0;
+  let timerInterval = null;
+
+  function closeWelcome() { document.getElementById('welcomeModal').style.display = 'none'; }
+  function toggleSettings(open) { document.getElementById('settingsScreen').classList.toggle('open', open); }
+
+  function updateUI() {
+    document.getElementById('quotaDisplay').textContent = "QUOTA: " + quota;
+    if (quota <= 0) document.getElementById('paywall').classList.add('open');
+    
+    const now = Date.now();
+    if (cooldownEnd > now) {
+      const remaining = Math.ceil((cooldownEnd - now) / 1000);
+      startCooldown(remaining);
+    }
+  }
+
+  function showPopin(val) {
+    if (val >= 1.70) {
+      const pop = document.getElementById('advicePop');
+      document.getElementById('popText').textContent = `Côte de ${val.toFixed(2)}x détectée. Martingale conseillée.`;
+      pop.classList.add('active');
+      setTimeout(() => pop.classList.remove('active'), 6000);
+    }
+  }
+
+  function checkAccessCode() {
+    const input = document.getElementById('accessCode').value.trim().toUpperCase();
+    const c2 = ["SHHD6", "JSIS7", "JDUZH9", "JZTZT6"], c5 = ["ABD123", "ASH72"], c40 = ["HSUS20", "JSSL17"];
+    const c15 = ["SHHD66", "JS6IS7", "JDUZ4H9", "JZ5TZT6"], c10 = ["ABD5123", "ASH872", "6SH872", "ASH872"], c30 = ["HSU3S20", "JSSL317"];
+    if (usedCodes.includes(input)) return alert("Déjà utilisé !");
+    let add = c2.includes(input) ? 2 : (c10.includes(input) ? 10 : (c40.includes(input) ? 40 : 0));
+    if (add === 0) return alert("Invalide.");
+    quota += add; usedCodes.push(input);
+    localStorage.setItem('oracle_quota', quota);
+    localStorage.setItem('oracle_used_codes', JSON.stringify(usedCodes));
+    document.getElementById('paywall').classList.remove('open');
+    updateUI();
+  }
+
+  function executeScan() {
+    if (quota <= 0 || Date.now() < cooldownEnd) return;
+
+    const btn = document.getElementById('scanBtn'), area = document.getElementById('mainArea'), status = document.getElementById('statusText'), timeDisp = document.getElementById('time');
+
+    const offset = (Math.floor(Math.random() * 12) + 1) * 60 * 1000;
+    const fluxTime = new Date(Date.now() + offset);
+    timeDisp.textContent = fluxTime.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    timeDisp.style.color = "var(--accent)";
+
+    btn.disabled = true;
+    area.classList.add('scanning');
+    status.textContent = "SYNCHRONISATION...";
+
+    setTimeout(() => {
+      area.classList.remove('scanning');
+      quota--; 
+      localStorage.setItem('oracle_quota', quota);
+      updateUI();
+
+      const r = Math.random() * 100;
+      let val = r <= 20 ? 1.0 + Math.random()*0.3 : r <= 65 ? 1.3 + Math.random()*0.4 : r <= 90 ? 1.7 + Math.random()*1.3 : 3.0 + Math.random()*8;
+      
+      const multDiv = document.getElementById('multiplier');
+      multDiv.textContent = val.toFixed(2) + "x";
+      multDiv.style.color = val >= 1.7 ? "var(--accent)" : (val < 1.3 ? "var(--danger)" : "var(--primary)");
+      
+      document.getElementById('prob').textContent = (94 + Math.random()*5).toFixed(1) + "%";
+      showPopin(val);
+
+      const wait = Math.floor(Math.random() * 60) + 30;
+      cooldownEnd = Date.now() + (wait * 1000);
+      localStorage.setItem('oracle_cooldown_end', cooldownEnd);
+      startCooldown(wait);
+    }, 4500);
+  }
+
+  function startCooldown(seconds) {
+    const btn = document.getElementById('scanBtn'), status = document.getElementById('statusText');
+    btn.disabled = true;
+    if (timerInterval) clearInterval(timerInterval);
+    let left = seconds;
+    timerInterval = setInterval(() => {
+      const m = Math.floor(left / 60), s = left % 60;
+      status.textContent = `PAUSE : ${m}:${s < 10 ? '0'+s : s}`;
+      left--;
+      if (left < 0) {
+        clearInterval(timerInterval);
+        cooldownEnd = 0;
+        localStorage.removeItem('oracle_cooldown_end');
+        btn.disabled = false;
+        status.textContent = "SYSTÈME PRÊT";
+        document.getElementById('time').style.color = "var(--text)";
+      }
+    }, 1000);
+  }
+
+  window.onload = updateUI;
+</script>
+</body>
+</html>
 
